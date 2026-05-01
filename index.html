@@ -3,107 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KSP Summer Task Creator</title>
+    <title>KSP Homework Creator </title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root { --primary: #FF7F50; --secondary: #2f3542; --bg: #f1f2f6; --blue: #007AFF; }
+        :root { --primary: #FF7F50; --secondary: #2f3542; --bg: #f1f2f6; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body { 
             font-family: 'Segoe UI', sans-serif; 
             background: var(--bg); margin: 0; padding: 15px;
             display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
         }
 
         .app-card { 
             width: 100%; max-width: 500px; background: #fff; 
             border-radius: 25px; padding: 25px; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            position: relative;
         }
+
+        /* Faster Loader Overlay */
+        #loader-overlay {
+            display: none; position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(255,255,255,0.9); z-index: 10;
+            flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 25px;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary); border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .header { text-align: center; margin-bottom: 20px; border-bottom: 2px dashed #eee; padding-bottom: 15px; }
-        .header img { width: 80px; height: auto; margin-bottom: 10px; }
-        .header h2 { margin: 0; color: var(--secondary); font-size: 22px; }
+        .header img { width: 65px; margin-bottom: 8px; }
+        .header h2 { margin: 0; color: var(--secondary); font-size: 20px; }
 
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--secondary); font-size: 14px; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--secondary); font-size: 13px; }
         
-        input, textarea { 
+        input, textarea, select { 
             width: 100%; border: 2px solid #edeff2; padding: 12px; border-radius: 12px; 
-            font-size: 16px !important; outline: none; transition: 0.3s; background: #f9fbff;
+            font-size: 16px !important; outline: none; background: #f9fbff;
         }
         textarea { height: 150px; resize: none; }
-        input:focus, textarea:focus { border-color: var(--primary); background: #fff; }
 
-        /* Button & Animation Styles */
         #btn-gen { 
             width: 100%; background: linear-gradient(135deg, #FF7F50, #ff6b81); 
             color: white; border: none; padding: 16px; border-radius: 12px;
-            font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s;
-            position: relative; overflow: hidden;
+            font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px;
         }
-        #btn-gen:disabled { opacity: 0.8; cursor: not-allowed; }
 
-        /* Creating... Animation */
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        .loading-text { animation: pulse 1s infinite; }
+        #result-area { display: none; margin-top: 25px; width: 100%; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        #result-area { display: none; margin-top: 25px; width: 100%; text-align: center; animation: slideUp 0.5s ease; }
-        @keyframes slideUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+        #preview-img { width: 100%; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #ddd; }
+        .down-btn { background: #2f3542; color: white; border: none; width: 100%; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; }
 
-        #preview-img { width: 100%; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        
-        #btn-download { 
-            background: var(--blue); color: white; border: none; width: 100%; 
-            padding: 16px; border-radius: 12px; font-weight: bold; font-size: 18px; 
-            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
+        .portal-footer { text-align: center; color: #888; font-size: 12px; margin-top: 20px; padding: 20px 0; }
 
         /* --- Capture Area --- */
         #capture-area { position: absolute; left: -9999px; width: 800px; background: white; }
-        .img-header { background: #fff; padding: 40px; display: flex; align-items: center; gap: 30px; border-bottom: 8px solid var(--primary); }
-        .img-header img { width: 120px; height: 120px; object-fit: contain; }
-        .img-header-text h1 { margin: 0; font-size: 45px; color: var(--secondary); text-transform: uppercase; }
-        .img-header-text p { margin: 5px 0 0; font-size: 20px; color: var(--primary); font-weight: bold; }
-        .img-content { padding: 50px 60px; min-height: 400px; background: #fff; }
-        .img-subject { background: #fff5f2; color: var(--primary); font-size: 32px; font-weight: 800; padding: 15px 25px; border-radius: 10px; display: inline-block; margin-bottom: 30px; border-left: 10px solid var(--primary); }
-        .img-text { font-size: 28px; color: #333; line-height: 1.6; white-space: pre-wrap; }
-        .img-footer { background: var(--secondary); color: white; padding: 30px; text-align: center; font-size: 22px; font-weight: 600; }
+        .img-header { background: #fff; padding: 40px; display: flex; align-items: center; gap: 30px; border-bottom: 2px solid #eee; }
+        .img-header img { width: 130px; height: 130px; object-fit: contain; }
+        .img-header-text h1 { margin: 2px 0; font-size: 48px; color: var(--secondary); text-transform: uppercase; }
+        .img-header-text p { margin: 0; font-size: 22px; color: #777; }
 
-        .modern-footer { margin-top: 20px; text-align: center; padding: 25px; font-size: 14px; color: #666; }
+        .img-content { padding: 40px 60px; min-height: 450px; background: #fff; }
+        .img-dynamic-title { text-align: center; font-size: 42px; font-weight: 900; color: var(--primary); letter-spacing: 2px; margin-bottom: 40px; text-transform: uppercase; border-bottom: 4px double var(--primary); display: block; padding-bottom: 10px; }
+        .img-subject { background: #fff5f2; color: var(--primary); font-size: 34px; font-weight: 800; padding: 15px 30px; border-radius: 10px; display: inline-block; margin-bottom: 35px; border-left: 10px solid var(--primary); }
+        .img-text { font-size: 30px; color: #333; line-height: 1.6; white-space: pre-wrap; }
+
+        .img-footer { background: var(--secondary); color: white; padding: 25px 40px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .footer-school { font-size: 20px; font-weight: 600; }
+        .footer-credit { font-size: 14px; opacity: 0.6; }
     </style>
 </head>
 <body>
 
 <div class="app-card">
+    <div id="loader-overlay">
+        <div class="spinner"></div>
+        <p style="margin-top:10px; color:var(--primary); font-size:14px;">Creating...</p>
+    </div>
+
     <div class="header">
         <img src="https://i.ibb.co/SDLXGQ1b/images.png" alt="Logo">
-        <h2>Summer Homework Portal</h2>
+        <h2>KSP Homework Creator</h2>
     </div>
 
     <div class="form-group">
-        <label>Subject / Topic</label>
-        <input type="text" id="sub-n" value="English: Creative Writing ✍️">
+        <label>Heading Type</label>
+        <select id="task-type">
+            <option value="Summer Holidays Homework">Summer Holidays Homework</option>
+            <option value="Winter Holidays Homework">Winter Holidays Homework</option>
+            <option value="Weekly Home Assignment">Weekly Home Assignment</option>
+            <option value="Special Project Work">Special Project Work</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Subject</label>
+        <input type="text" id="sub-n" value="Computer Science 💻">
     </div>
 
     <div class="form-group">
         <label>Homework Details</label>
         <textarea id="sub-w">Namaste bacho! ☀️
 
-Is hafte aapko apni pasandida kahani ke baare mein likhna hai.
-Handwriting saaf honi chahiye! 📝</textarea>
-    </div>
+Is baar humein coding aur technology ke baare mein kuch naya seekhna hai:
+1. 'Generation of Computers' ka ek chart paper banayein.
+2. Input aur Output devices ki 5-5 photos paste karein.
+3. MS Paint mein ek sundar sa ghar (house) design karein.
 
-    <button id="btn-gen">📸 Create Homework Image</button>
+Kaam saaf-suthra hona chahiye! 📝</textarea>
+    </div>
+    <button id="btn-clear" style="width: 100%; background: #e74c3c; color: white; border: none; padding: 10px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px; opacity: 0.8;">
+    🗑️ Clear Previous Data
+</button>
+
+
+    <button id="btn-gen">🚀 Create Fast Image</button>
 
     <div id="result-area">
         <img id="preview-img">
-        <button id="btn-download">📥 Download Image</button>
+        <button class="down-btn" id="btn-download">💾 Download PNG</button>
     </div>
+</div>
+
+<div class="portal-footer">
+    Designed & Developed with ❤️ by <br>
+    <strong>Suraj Patel | Varanasi</strong>
 </div>
 
 <div id="capture-area">
@@ -115,67 +147,108 @@ Handwriting saaf honi chahiye! 📝</textarea>
         </div>
     </div>
     <div class="img-content">
+        <div id="out-title" class="img-dynamic-title"></div>
         <div id="out-n" class="img-subject"></div>
         <div id="out-w" class="img-text"></div>
     </div>
-    <div class="img-footer">⛱️ Enjoy Your Summer Holidays ⛱️</div>
+    <div class="img-footer">
+        <div class="footer-school">✨KSP Public School✨</div>
+        <div class="footer-credit">Kesharipur | Varanasi | Uttar Pradesh</div>
+    </div>
 </div>
 
-<footer class="modern-footer">
-    Designed & Maintained with ❤️ by <br>
-    <strong>Suraj Patel</strong> | Varanasi
-</footer>
-
 <script>
-    const btnGen = document.getElementById('btn-gen');
-    const btnDownload = document.getElementById('btn-download');
-    const previewImg = document.getElementById('preview-img');
-    const resultArea = document.getElementById('result-area');
-
-    btnGen.onclick = async () => {
+    document.getElementById('btn-gen').onclick = async () => {
+        const type = document.getElementById('task-type').value;
         const n = document.getElementById('sub-n').value;
         const w = document.getElementById('sub-w').value;
+        
+        if(!n || !w) return alert("Please fill details!");
 
-        if(!n || !w) return alert("Dono box bhariye!");
+        const loader = document.getElementById('loader-overlay');
+        loader.style.display = 'flex';
 
-        // 1. Start Animation
-        const originalText = btnGen.innerText;
-        btnGen.disabled = true;
-        btnGen.innerHTML = '<span class="loading-text">⏳ Creating Magic...</span>';
-
-        document.getElementById('out-n').innerText = n;
+        document.getElementById('out-title').innerText = type;
+        document.getElementById('out-n').innerText = "Subject: " + n;
         document.getElementById('out-w').innerText = w;
 
+        // Optimized time (sirf 0.4s wait taaki render ho sake)
         setTimeout(async () => {
-            try {
-                const canvas = await html2canvas(document.getElementById('capture-area'), {
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: true
-                });
-                
-                const imageData = canvas.toDataURL("image/png");
-                previewImg.src = imageData;
-                resultArea.style.display = 'block';
+            const canvas = await html2canvas(document.getElementById('capture-area'), {
+                scale: 2, useCORS: true, allowTaint: true
+            });
+            document.getElementById('preview-img').src = canvas.toDataURL("image/png");
+            document.getElementById('result-area').style.display = 'block';
+            loader.style.display = 'none';
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }, 400); 
+    };
 
-                btnDownload.onclick = () => {
-                    const link = document.createElement('a');
-                    link.download = `Homework.png`;
-                    link.href = imageData;
-                    link.click();
-                };
+    document.getElementById('btn-download').onclick = () => {
+        const link = document.createElement('a');
+        link.download = `School_Task_${Date.now()}.png`;
+        link.href = document.getElementById('preview-img').src;
+        link.click();
+    };
+</script>
+<script>
+    const taskType = document.getElementById('task-type');
+    const subN = document.getElementById('sub-n');
+    const subW = document.getElementById('sub-w');
 
-                // 2. Stop Animation
-                btnGen.disabled = false;
-                btnGen.innerText = originalText;
+    // --- 1. Page Load होने पर Data Restore करना ---
+    window.onload = () => {
+        if(localStorage.getItem('ksp_type')) taskType.value = localStorage.getItem('ksp_type');
+        if(localStorage.getItem('ksp_subject')) subN.value = localStorage.getItem('ksp_subject');
+        if(localStorage.getItem('ksp_work')) subW.value = localStorage.getItem('ksp_work');
+    };
 
-                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            } catch (err) {
-                alert("Error!");
-                btnGen.disabled = false;
-                btnGen.innerText = originalText;
-            }
-        }, 1200); // Thoda delay rakha hai taaki animation dikhe
+    // --- 2. Type करते समय Data Save करना (Auto-Save) ---
+    const saveData = () => {
+        localStorage.setItem('ksp_type', taskType.value);
+        localStorage.setItem('ksp_subject', subN.value);
+        localStorage.setItem('ksp_work', subW.value);
+    };
+
+    taskType.onchange = saveData;
+    subN.oninput = saveData;
+    subW.oninput = saveData;
+
+    // --- 3. Clear Button Logic ---
+    document.getElementById('btn-clear').onclick = () => {
+        if(confirm("Kya aap saara data hatana chahte hain?")) {
+            localStorage.clear();
+            location.reload(); // Page refresh karke fields khali kar dega
+        }
+    };
+
+    // --- 4. Image Generation Logic (Same as before) ---
+    document.getElementById('btn-gen').onclick = async () => {
+        if(!subN.value || !subW.value) return alert("Please fill details!");
+
+        const loader = document.getElementById('loader-overlay');
+        loader.style.display = 'flex';
+
+        document.getElementById('out-title').innerText = taskType.value;
+        document.getElementById('out-n').innerText = "Subject: " + subN.value;
+        document.getElementById('out-w').innerText = subW.value;
+
+        setTimeout(async () => {
+            const canvas = await html2canvas(document.getElementById('capture-area'), {
+                scale: 2, useCORS: true, allowTaint: true
+            });
+            document.getElementById('preview-img').src = canvas.toDataURL("image/png");
+            document.getElementById('result-area').style.display = 'block';
+            loader.style.display = 'none';
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }, 400); 
+    };
+
+    document.getElementById('btn-download').onclick = () => {
+        const link = document.createElement('a');
+        link.download = `Suraj_Homework${Date.now()}.png`;
+        link.href = document.getElementById('preview-img').src;
+        link.click();
     };
 </script>
 
